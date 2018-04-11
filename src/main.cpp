@@ -12,6 +12,7 @@ constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 
+
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 // else the empty string "" will be returned.
@@ -58,8 +59,42 @@ int main()
           * NOTE: Feel free to play around with the throttle and speed. Maybe use
           * another PID controller to control the speed!
           */
-          steer_value = pid.CalculatePIDOut(cte);
-          
+          if (pid.pid_optimized == false)
+          {
+
+            pid.twiddle();
+
+            steer_value = pid.CalculatePIDOut(cte);
+
+          }
+          else
+          {
+            steer_value = pid.CalculatePIDOut(cte);
+          }
+
+          std::cout << "reset_simulator: "<<pid.reset_simulator<< std::endl;
+          std::cout << "tunetest_count: "<<pid.tunetest_count<< std::endl;
+          std::cout << "pid_optimized: "<<pid.pid_optimized<< std::endl;
+
+          /*
+           * Reset the simulator once we reach the end of
+           * tuning strech defined for the track
+           */
+          if (pid.reset_simulator == true)
+          {
+            pid.reset_simulator = false;
+            pid.tunetest_count = 0;
+            pid.p_error = 0;
+            pid.i_error = 0;
+            pid.d_error = 0;
+
+            std::string msg = "42[\"reset\",{}]";
+            std::cout << msg << std::endl;
+            ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+            std::cout << "reset_simulator: "<<pid.reset_simulator<< std::endl;
+          }
+          else
+          {
           // DEBUG
           std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
 
@@ -69,6 +104,7 @@ int main()
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+          }
         }
       } else {
         // Manual driving
