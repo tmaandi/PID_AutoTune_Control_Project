@@ -29,13 +29,17 @@ std::string hasData(std::string s) {
   return "";
 }
 
+PID pid;
+
 int main()
 {
   uWS::Hub h;
 
-  PID pid;
   // TODO: Initialize the pid variable.
-  pid.Init(0.025,0.0,0.05);
+  if (pid.is_initialized == false)
+  {
+    pid.Init(0.05,0.0,0.3);
+  }
 
   h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -70,6 +74,7 @@ int main()
           else
           {
             steer_value = pid.CalculatePIDOut(cte);
+            std::cout<<"Kp: "<<pid.Kp<<" Ki: "<<pid.Ki<<" Kd: "<<pid.Kd<<std::endl;
           }
 
           std::cout << "reset_simulator: "<<pid.reset_simulator<< std::endl;

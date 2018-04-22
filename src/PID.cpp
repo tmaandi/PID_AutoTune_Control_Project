@@ -1,3 +1,5 @@
+#include<iostream>
+
 #include "PID.h"
 
 using namespace std;
@@ -18,6 +20,7 @@ PID::PID()
   pid_optimized = false;
   tunetest_count = 0;
   reset_simulator = false;
+  is_initialized = false;
 
 }
 
@@ -30,6 +33,7 @@ void PID::Init(double Kp_, double Ki_, double Kd_, bool pid_optimized_)
   Ki = Ki_;
   Kd = Kd_;
   pid_optimized = pid_optimized_;
+  is_initialized = true;
 }
 
 void PID::UpdateError(double cte)
@@ -77,11 +81,13 @@ double PID::CalculatePIDOut(double cte)
 void PID::twiddle()
 {
   double* p[] = {&Kp, &Ki, &Kd};
+//  double* p[] = {&Kp, &Kd};
 
   /*
    * Deltas for P,I,D respectively
    */
   static double dp[] = {0.01, 0.001, 0.1};
+//  static double dp[] = {0.01, 0.1};
 
   static double total_error, best_error, dp_sum = 100;
 
@@ -138,6 +144,8 @@ void PID::twiddle()
           *p[tuning_stage] += dp[tuning_stage];
 
           tuning_phase = Phase_Gain_Evaluate_I;
+
+          reset_simulator = true;
         }
         else if ((tuning_phase == Phase_Gain_Evaluate_I) \
             || (tuning_phase == Phase_Gain_Evaluate_II))
@@ -169,8 +177,6 @@ void PID::twiddle()
 
             if (tuning_stage == D_Tuning)
             {
-              reset_simulator = true;
-
               /*
                * Sum the dp terms. If this sum gets smaller than
                * GAIN_TOL, then stop optimization and set the
@@ -188,6 +194,8 @@ void PID::twiddle()
              */
             tuning_stage = static_cast<TuningStageType>((tuning_stage + 1) \
                                                         % NumofTuningStages);
+
+            reset_simulator = true;
           }
           else
           {
@@ -195,9 +203,13 @@ void PID::twiddle()
              * If increasing the gain doesn't work, try
              * decreasing the gain
              */
-            *p[tuning_stage] -= dp[tuning_stage];
-
-            if ( tuning_phase == Phase_Gain_Evaluate_II)
+            if (tuning_phase == Phase_Gain_Evaluate_I)
+            {
+              *p[tuning_stage] -= 2*dp[tuning_stage];
+              tuning_phase = Phase_Gain_Evaluate_II;
+              reset_simulator = true;
+            }
+            else if ( tuning_phase == Phase_Gain_Evaluate_II)
             {
               if (total_error < best_error)
               {
@@ -218,8 +230,6 @@ void PID::twiddle()
 
               if (tuning_stage == D_Tuning)
               {
-                reset_simulator = true;
-
                 /*
                  * Sum the dp terms. If this sum gets smaller than
                  * GAIN_TOL, then stop optimization and set the
@@ -236,10 +246,12 @@ void PID::twiddle()
                */
               tuning_stage = static_cast<TuningStageType>((tuning_stage + 1) \
                                                           % NumofTuningStages);
+
+              reset_simulator = true;
             }
             else
             {
-              tuning_phase = Phase_Gain_Evaluate_II;
+
             }
 
           }
@@ -253,10 +265,15 @@ void PID::twiddle()
     else
     {
       best_error = total_error;
+      reset_simulator = true;
     }
 
   }
 
   tunetest_count ++;
+
+  cout<<"Kp: "<<Kp<<" Ki: "<<Ki<<" Kd: "<<Kd<<endl;
+  cout<<"dp[0]: "<<dp[0]<<" dp[1]: "<<dp[1]<<" dp[2]: "<<dp[2]<<" dp_sum: "<<dp_sum<<endl;
+  cout<<"Tunining Phase: "<<tuning_phase<<" Tuning Stage: "<<tuning_stage<<endl;
 }
 

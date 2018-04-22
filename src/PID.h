@@ -4,12 +4,14 @@
 /*
  * Define the number of tuning loops
  */
-#define TUNELOOPS 50
+#define TUNELOOPS 200
 
 /*
  * Define enum representing tuning stages
  */
 enum TuningStageType {P_Tuning, I_Tuning, D_Tuning, NumofTuningStages};
+//enum TuningStageType {P_Tuning, D_Tuning, NumofTuningStages};
+
 
 /*
  * Define enum representing tuning phases for each stage
@@ -21,7 +23,7 @@ enum TuningPhaseType {Phase_Gain_Update, Phase_Gain_Evaluate_I,\
  * Define gain tolerance to halt
  * optimization
  */
-#define GAIN_TOL 0.0001
+#define GAIN_TOL 0.001
 
 class PID {
 public:
@@ -53,6 +55,11 @@ public:
    * Counter to demark tuning time of track
    */
   int tunetest_count;
+
+  /*
+   * Init flag
+   */
+  bool is_initialized;
 
   /*
   * Constructor
