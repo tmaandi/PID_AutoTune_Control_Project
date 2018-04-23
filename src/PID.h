@@ -4,7 +4,9 @@
 /*
  * Define the number of tuning loops
  */
-#define TUNELOOPS 200
+#define TUNELOOPS 500
+
+//#define TUNELOOPS 200
 
 /*
  * Define enum representing tuning stages
