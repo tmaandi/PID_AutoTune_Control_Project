@@ -4,10 +4,6 @@
 
 using namespace std;
 
-/*
-* TODO: Complete the PID class.
-*/
-
 PID::PID()
 {
 
@@ -55,13 +51,15 @@ double PID::TotalError(double last_total_error)
 
 double PID::CalculatePIDOut(double cte)
 {
+  double steer_value;
 
   UpdateError(cte);
 
-  double steer_value;
-
   steer_value = - (Kp * p_error + Ki * i_error + Kd * d_error);
 
+  /*
+   * Limiting steer_value between -1.0 and 1.0
+   */
   if (steer_value <= -1.0)
   {
     steer_value = -1.0;
@@ -81,18 +79,22 @@ double PID::CalculatePIDOut(double cte)
 void PID::twiddle()
 {
   double* p[] = {&Kp, &Ki, &Kd};
-//  double* p[] = {&Kp, &Kd};
 
   /*
-   * Deltas for P,I,D respectively
+   * Deltas for P,I,D gain adjustment respectively
    */
   static double dp[] = {0.01, 0.001, 0.1};
-//  static double dp[] = {0.01, 0.1};
 
   static double total_error, best_error, dp_sum = 100;
 
+  /*
+   * Three tuning states: P, I and D tuning
+   */
   static TuningStageType tuning_stage;
 
+  /*
+   * Three tuing phases: Gain_Update, Gain_Evaluate_I and Gain_Evaluate_II
+   */
   static TuningPhaseType tuning_phase;
 
   /*
@@ -119,11 +121,14 @@ void PID::twiddle()
   {
     if (tunetest_count == TUNELOOPS)
     {
+      /*
+       * Average the accumulated error
+       */
       total_error = total_error/(TUNELOOPS/2);
     }
     /*
      * Don't update gains for the first run and assign
-     * the first total error as best error
+     * the first total error as the best error
      */
     if (best_error != 0)
     {
@@ -131,7 +136,7 @@ void PID::twiddle()
       if (dp_sum < GAIN_TOL)
       {
         /*
-         * No more PID tuning
+         * No more PID auto-tuning
          */
         pid_optimized = true;
 
@@ -143,6 +148,9 @@ void PID::twiddle()
         {
           *p[tuning_stage] += dp[tuning_stage];
 
+          /*
+           * Gain updated, move to evaluation phase
+           */
           tuning_phase = Phase_Gain_Evaluate_I;
 
           reset_simulator = true;
@@ -190,7 +198,7 @@ void PID::twiddle()
             }
 
             /*
-             * Set the tuning stage to move to next gain
+             * Set the tuning stage to move to next gain tuning
              */
             tuning_stage = static_cast<TuningStageType>((tuning_stage + 1) \
                                                         % NumofTuningStages);
@@ -242,7 +250,7 @@ void PID::twiddle()
                 }
               }
               /*
-               * Set the tuning stage to move to next gain
+               * Set the tuning stage to move to next gain tuning
                */
               tuning_stage = static_cast<TuningStageType>((tuning_stage + 1) \
                                                           % NumofTuningStages);
@@ -271,9 +279,5 @@ void PID::twiddle()
   }
 
   tunetest_count ++;
-
-  cout<<"Kp: "<<Kp<<" Ki: "<<Ki<<" Kd: "<<Kd<<endl;
-  cout<<"dp[0]: "<<dp[0]<<" dp[1]: "<<dp[1]<<" dp[2]: "<<dp[2]<<" dp_sum: "<<dp_sum<<endl;
-  cout<<"Tunining Phase: "<<tuning_phase<<" Tuning Stage: "<<tuning_stage<<endl;
 }
 

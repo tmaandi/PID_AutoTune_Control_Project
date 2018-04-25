@@ -1,0 +1,20 @@
+Effect of P,I,D Gains:
+
+Having only Proprtional-gain in place introduced a spring-like effect, pulling in the car to the equilibrium
+(0-error) position but acting like a pure spring, it brought along with it, oscillations !! 
+With low Kp, car didn't retract back in time while with high Kp, it exhibited high overshoots and sustained
+oscillation.
+D-gain introduced the much needed damping here, killing the excessive oscillations. Though too high a D-gain
+can also lead to high frequency oscillations, making controller too sensitive to error changes.
+Integral gain had no effect on the transient response of the steering command. It does helps in getting the 
+steady state error to zero, but there is always a chance of integral wind up problem, when this term gets
+too big, as a result of either a large I-gain or a sustained error or both. This can be mitigated by either 
+limiting or resetting the I-term appropriately.
+
+The final hyper-parameters were chosen using the auto-tuning twiddle algorithm. The algorithm was initialized
+with ballpark P and D gains with 0 I-gain (and 0 - deltaI gain) in the beginning. The resulting optimized gains
+were again fed back to twiddle, this time for fine tuning. In this second iteration, the tuning interval was
+increased, and also, this time, the deltaI was set to a non-zero value, enabling the auto-tuning of integral 
+gain as well in this iteration. It is also observed that the set of optimum gains change with car speed. As 
+we go to higher throttle values, we need tighter, agressive gains. This calls for tuning at multiple throttle
+values and then using a look-up table for interpolating and getting appropriate PID gains for a given throttle.
